@@ -1,0 +1,172 @@
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+
+# *************************************************************************
+#    > File Name: monitor_client.py
+#    > Author: xlzh
+#    > Mail: xiaolongzhang2015@163.com
+#    > Created Time: 2024年02月14日 星期三 20时45分10秒
+# *************************************************************************
+
+import sys
+import socket
+import time
+import json
+import psutil
+import subprocess
+from collections import deque
+
+
+SERVER = "127.0.0.1"
+PORT = 35601
+INTERVAL = 60  # the interval point of monitor (default 1min)
+
+
+class Cpu(object):
+    def __init__(self, queue_size):
+        self.size = queue_size
+        self.cpu = deque([0.0]*self.size, maxlen=self.size)
+
+    def get_avg_cpu(self, n_point):
+        cpu_ratio = psutil.cpu_percent(interval=1)
+        self.cpu.append(cpu_ratio)
+
+        if n_point > self.size:
+            sys.stderr.write(f"[Error:get_avg_cpu] the check point can not larger than {self.size}!")
+            return 0.0
+
+        avg_ratio = 0.0
+        for idx in range(self.size-1, self.size-n_point-1, -1):
+            avg_ratio += self.cpu[idx]
+
+        return avg_ratio / n_point
+
+
+class Memory(object):
+    def __init__(self, queue_size):
+        self.size = queue_size
+        self.mem = deque([0.0]*self.size, maxlen=self.size)
+
+    def get_avg_mem(self, n_point):
+        mem_obj = psutil.virtual_memory()
+        mem_ratio = mem_obj.used / mem_obj.total * 100.0
+        self.mem.append(mem_ratio)
+
+        if n_point > self.size:
+            sys.stderr.write(f"[Error:get_avg_mem] the check point can not larger than {self.size}!")
+            return 0
+
+        avg_ratio = 0.0
+        for idx in range(self.size-1, self.size-n_point-1, -1):
+            avg_ratio += self.mem[idx]
+
+        return avg_ratio / n_point
+
+
+class Network(object):
+    def __init__(self, queue_size):
+        self.size = queue_size + 1  # need one more item
+        self.rx = deque([0]*self.size, maxlen=self.size)
+        self.tx = deque([0]*self.size, maxlen=self.size)
+        self.valid_device = []
+        self._get_valid_device()
+
+    def _get_valid_device(self):
+        invalid_name = ['lo', 'tun', 'kube', 'docker', 'vmbr', 'br-', 'vnet', 'veth']
+        net = psutil.net_io_counters(pernic=True)
+
+        for dev_name in net.keys():
+            is_invalid = any(name in dev_name for name in invalid_name)
+            if is_invalid is True:  # skip the invalid device
+                continue
+
+            self.valid_device.append(dev_name)
+
+    def _update_traffic(self):
+        net_in, net_out = 0, 0
+        net = psutil.net_io_counters(pernic=True)
+
+        for dev in self.valid_device:
+            dev_info = net[dev]
+            net_in += dev_info[1]  # bytes_recv
+            net_out += dev_info[0]  # bytes_sent
+
+        self.rx.append(net_in)
+        self.tx.append(net_out)
+
+    def get_avg_net(self, n_point):
+        self._update_traffic()
+        avg_rx, avg_tx = 0, 0
+
+        if n_point > self.size:
+            sys.stderr.write(f"[Error:get_avg_speed] the check point can not larger than {self.size}!")
+            return 0, 0
+
+        for idx in range(self.size-1, self.size-n_point-1, -1):
+            avg_rx += self.rx[idx] - self.rx[idx - 1]
+            avg_tx += self.tx[idx] - self.tx[idx - 1]
+
+        return int(avg_rx/n_point), int(avg_tx/n_point)
+
+
+class Monitor(object):
+    def __init__(self, interval_size=INTERVAL):
+        self.cpu_obj = Cpu(interval_size)
+        self.mem_obj = Memory(interval_size)
+        self.net_obj = Network(interval_size)
+
+    def get_cpu_ratio(self, n_point):
+        return self.cpu_obj.get_avg_cpu(n_point)
+
+    def get_mem_ratio(self, n_point):
+        return self.mem_obj.get_avg_mem(n_point)
+
+    def get_net_ratio(self, n_point):
+        return self.net_obj.get_avg_net(n_point)
+
+
+def get_hostname() -> str:
+    """
+    get the hostname of the node
+    :return: hostname
+    """
+    server_cmd = "hostname"
+    output = subprocess.run(server_cmd, shell=True, stdout=subprocess.PIPE, text=True)
+
+    if output.returncode != 0:
+        sys.stderr.write("[Error:get_hostname] unexpect condition occurred!\n")
+        sys.exit(-1)
+
+    return output.stdout.strip()
+
+
+if __name__ == '__main__':
+    socket.setdefaulttimeout(30)
+    monitor_obj = Monitor()
+
+    while True:
+        try:
+            # print("Connecting...")
+            # s = socket.create_connection((SERVER, PORT))
+            # data = s.recv(1024).decode()
+            # if data.find("Connection successful") < 0:
+            #     raise socket.error
+            # TODO: the ratio is wrong
+            array = {'host_name': get_hostname(),
+                     'mem_5': monitor_obj.get_mem_ratio(5),
+                     'mem_60': monitor_obj.get_mem_ratio(INTERVAL),
+                     'cpu_5': monitor_obj.get_cpu_ratio(5),
+                     'cpu_60': monitor_obj.get_cpu_ratio(INTERVAL),
+                     'net_5': monitor_obj.get_net_ratio(5),
+                     'net_60': monitor_obj.get_net_ratio(INTERVAL)
+                     }
+            # s.send(json.dumps(array).encode("utf-8"))
+            print(array)
+
+        except KeyboardInterrupt:
+            raise
+
+        except socket.error:
+            print("Disconnected...")
+
+        time.sleep(INTERVAL)

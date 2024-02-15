@@ -12,6 +12,7 @@ import socket
 import json
 import asyncio
 import threading
+from datetime import datetime
 from tortoise import Tortoise, exceptions
 from settings import *
 from models.model import NodeModel
@@ -31,6 +32,7 @@ async def handle_connection(client_socket):
     host_name = info_dict.pop('host')
 
     try:
+        info_dict['update'] = datetime.now()
         await NodeModel.get(host=host_name)
         await NodeModel.filter(host=host_name).update(**info_dict)
 

@@ -17,5 +17,5 @@ RUN set -eux; \
 
 WORKDIR /app
 
-ENTRYPOINT entrance.sh $0
+ENTRYPOINT sh entrance.sh $0
 

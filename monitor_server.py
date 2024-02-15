@@ -10,6 +10,7 @@
 
 import socket
 import json
+import sys
 import asyncio
 import threading
 from datetime import datetime
@@ -44,6 +45,7 @@ async def handle_connection(client_socket):
 
 
 def main():
+    sys.stderr.write("[*] start the monitor server ...\n")
     asyncio.run(Tortoise.init(TORTOISE))  # connect to the sqlite database
     asyncio.run(Tortoise.generate_schemas())  # generate schemas if necessary
 

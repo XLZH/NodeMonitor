@@ -161,6 +161,7 @@ class Monitor(object):
 if __name__ == '__main__':
     socket.setdefaulttimeout(10)
     monitor_obj = Monitor(MONITOR_INTERVAL)
+    sys.stderr.write("[*] start the monitor client ...\n")
 
     while True:
         # update the node status info in every loop

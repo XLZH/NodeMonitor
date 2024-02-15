@@ -102,7 +102,7 @@ class Network(object):
 
         if n_point > self.size:
             sys.stderr.write(f"[Error:get_avg_speed] the check point can not larger than {self.size}!")
-            return 0, 0
+            return [0, 0]
 
         for idx in range(self.size-1, self.size-n_point-1, -1):
             avg_rx += self.rx[idx] - self.rx[idx - 1]

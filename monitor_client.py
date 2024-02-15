@@ -17,9 +17,11 @@ import subprocess
 from collections import deque
 
 
-SERVER = "127.0.0.1"
-PORT = 35601
-INTERVAL = 60  # the interval point of monitor (default 1min)
+SERVER = "127.0.0.1"  # the server address
+PORT = 35601  # the port to connect to the server
+MONITOR_INTERVAL = 60  # the interval point of monitor (default 1min)
+SOCKET_INTERVAL = 10  # the node failed to connect to the server
+SENT_INTERVAL = 1  # sent the node info to the server
 
 
 class Cpu(object):
@@ -28,7 +30,7 @@ class Cpu(object):
         self.cpu = deque([0.0]*self.size, maxlen=self.size)
 
     def get_avg_cpu(self, n_point):
-        cpu_ratio = psutil.cpu_percent(interval=1)
+        cpu_ratio = psutil.cpu_percent()
         self.cpu.append(cpu_ratio)
 
         if n_point > self.size:
@@ -69,9 +71,9 @@ class Network(object):
         self.rx = deque([0]*self.size, maxlen=self.size)
         self.tx = deque([0]*self.size, maxlen=self.size)
         self.valid_device = []
-        self._get_valid_device()
+        self._net_object_init()
 
-    def _get_valid_device(self):
+    def _net_object_init(self):
         invalid_name = ['lo', 'tun', 'kube', 'docker', 'vmbr', 'br-', 'vnet', 'veth']
         net = psutil.net_io_counters(pernic=True)
 
@@ -106,23 +108,7 @@ class Network(object):
             avg_rx += self.rx[idx] - self.rx[idx - 1]
             avg_tx += self.tx[idx] - self.tx[idx - 1]
 
-        return int(avg_rx/n_point), int(avg_tx/n_point)
-
-
-class Monitor(object):
-    def __init__(self, interval_size=INTERVAL):
-        self.cpu_obj = Cpu(interval_size)
-        self.mem_obj = Memory(interval_size)
-        self.net_obj = Network(interval_size)
-
-    def get_cpu_ratio(self, n_point):
-        return self.cpu_obj.get_avg_cpu(n_point)
-
-    def get_mem_ratio(self, n_point):
-        return self.mem_obj.get_avg_mem(n_point)
-
-    def get_net_ratio(self, n_point):
-        return self.net_obj.get_avg_net(n_point)
+        return [int(avg_rx/n_point), int(avg_tx/n_point)]
 
 
 def get_hostname() -> str:
@@ -140,33 +126,46 @@ def get_hostname() -> str:
     return output.stdout.strip()
 
 
+class Monitor(object):
+    def __init__(self, interval_size):
+        self.cpu_obj = Cpu(interval_size)
+        self.mem_obj = Memory(interval_size)
+        self.net_obj = Network(interval_size)
+
+    def get_cpu_ratio(self, n_point):
+        return self.cpu_obj.get_avg_cpu(n_point)
+
+    def get_mem_ratio(self, n_point):
+        return self.mem_obj.get_avg_mem(n_point)
+
+    def get_net_speed(self, n_point):
+        return self.net_obj.get_avg_net(n_point)
+
+    def get_node_info(self):
+        info_dict = {
+            'hostname': get_hostname(),
+            'cpu_5': '%.2f' % self.get_cpu_ratio(5),
+            'cpu_60': '%.2f' % self.get_cpu_ratio(60),
+            'mem_5': '%.2f' % self.get_mem_ratio(5),
+            'mem_60': '%.2f' % self.get_mem_ratio(60),
+            'net_5': self.get_net_speed(5),
+            'net_60': self.get_net_speed(60)
+        }
+        return info_dict
+
+
 if __name__ == '__main__':
     socket.setdefaulttimeout(30)
-    monitor_obj = Monitor()
+    monitor_obj = Monitor(MONITOR_INTERVAL)
 
     while True:
         try:
-            # print("Connecting...")
-            # s = socket.create_connection((SERVER, PORT))
-            # data = s.recv(1024).decode()
-            # if data.find("Connection successful") < 0:
-            #     raise socket.error
-            # TODO: the ratio is wrong
-            array = {'host_name': get_hostname(),
-                     'mem_5': monitor_obj.get_mem_ratio(5),
-                     'mem_60': monitor_obj.get_mem_ratio(INTERVAL),
-                     'cpu_5': monitor_obj.get_cpu_ratio(5),
-                     'cpu_60': monitor_obj.get_cpu_ratio(INTERVAL),
-                     'net_5': monitor_obj.get_net_ratio(5),
-                     'net_60': monitor_obj.get_net_ratio(INTERVAL)
-                     }
-            # s.send(json.dumps(array).encode("utf-8"))
-            print(array)
-
-        except KeyboardInterrupt:
-            raise
+            s = socket.create_connection((SERVER, PORT))
+            node_info = monitor_obj.get_node_info()
+            s.send(json.dumps(node_info).encode("utf-8"))
 
         except socket.error:
-            print("Disconnected...")
+            time.sleep(SOCKET_INTERVAL)
+            continue
 
-        time.sleep(INTERVAL)
+        time.sleep(SENT_INTERVAL)

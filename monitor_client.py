@@ -160,13 +160,15 @@ class Monitor(object):
 
 
 if __name__ == '__main__':
-    socket.setdefaulttimeout(30)
+    socket.setdefaulttimeout(10)
     monitor_obj = Monitor(MONITOR_INTERVAL)
 
     while True:
+        # update the node status info in every loop
+        node_info = monitor_obj.get_node_info()
+
         try:
             s = socket.create_connection((SERVER, PORT))
-            node_info = monitor_obj.get_node_info()
             s.send(json.dumps(node_info).encode("utf-8"))
 
         except socket.error:

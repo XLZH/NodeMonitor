@@ -142,14 +142,19 @@ class Monitor(object):
         return self.net_obj.get_avg_net(n_point)
 
     def get_node_info(self):
+        net_rx_5, net_tx_5 = self.get_net_speed(5)
+        net_rx_60, net_tx_60 = self.get_net_speed(60)
+
         info_dict = {
-            'hostname': get_hostname(),
+            'host': get_hostname(),
             'cpu_5': '%.2f' % self.get_cpu_ratio(5),
             'cpu_60': '%.2f' % self.get_cpu_ratio(60),
             'mem_5': '%.2f' % self.get_mem_ratio(5),
             'mem_60': '%.2f' % self.get_mem_ratio(60),
-            'net_5': self.get_net_speed(5),
-            'net_60': self.get_net_speed(60)
+            'net_rx_5': '%d' % net_rx_5,
+            'net_tx_5': '%d' % net_tx_5,
+            'net_rx_60': '%d' % net_rx_60,
+            'net_tx_60': '%d' % net_tx_60,
         }
         return info_dict
 

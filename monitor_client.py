@@ -15,10 +15,9 @@ import json
 import psutil
 import subprocess
 from collections import deque
+from settings import *
 
 
-SERVER = "127.0.0.1"  # the server address
-PORT = 35601  # the port to connect to the server
 MONITOR_INTERVAL = 60  # the interval point of monitor (default 1min)
 SOCKET_INTERVAL = 10  # the node failed to connect to the server
 SENT_INTERVAL = 1  # sent the node info to the server
@@ -168,7 +167,7 @@ if __name__ == '__main__':
         node_info = monitor_obj.get_node_info()
 
         try:
-            s = socket.create_connection((SERVER, PORT))
+            s = socket.create_connection((SERVER_ADDRESS, SERVER_PORT))
             s.send(json.dumps(node_info).encode("utf-8"))
 
         except socket.error:

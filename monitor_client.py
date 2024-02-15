@@ -15,7 +15,6 @@ import json
 import psutil
 import subprocess
 from collections import deque
-from settings import *
 
 
 MONITOR_INTERVAL = 60  # the interval point of monitor (default 1min)
@@ -159,6 +158,14 @@ class Monitor(object):
 
 
 if __name__ == '__main__':
+    args = sys.argv
+    if len(args) != 3:
+        sys.stderr.write("usage: python monitor_client.py <server_ip> <server_port>\n")
+        sys.exit(-1)
+
+    server_ip = args[1]
+    server_port = int(args[2])
+
     socket.setdefaulttimeout(10)
     monitor_obj = Monitor(MONITOR_INTERVAL)
     sys.stderr.write("[*] start the monitor client ...\n")
@@ -168,7 +175,7 @@ if __name__ == '__main__':
         node_info = monitor_obj.get_node_info()
 
         try:
-            s = socket.create_connection((SERVER_ADDRESS, SERVER_PORT))
+            s = socket.create_connection((server_ip, server_port))
             s.send(json.dumps(node_info).encode("utf-8"))
 
         except socket.error:

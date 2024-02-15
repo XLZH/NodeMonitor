@@ -18,14 +18,7 @@ from tortoise import Tortoise, exceptions
 from settings import *
 from models.model import NodeModel
 
-
 MAX_CONNECT = 32  # maximum number of parallel connection
-
-
-# start the server socket and listen for connection
-server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server_socket.bind((SERVER_LISTEN, SERVER_PORT))
-server_socket.listen(MAX_CONNECT)
 
 
 async def handle_connection(client_socket):
@@ -45,6 +38,19 @@ async def handle_connection(client_socket):
 
 
 def main():
+    args = sys.argv
+    if len(args) != 2:
+        sys.stderr.write("usage: python monitor_server.py <server_port>\n")
+        sys.exit(-1)
+
+    listen_ip = '0.0.0.0'  # the address listened by monitor_server
+    server_port = int(args[1])
+
+    # start the server socket and listen for connection
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.bind((listen_ip, server_port))
+    server_socket.listen(MAX_CONNECT)
+
     sys.stderr.write("[*] start the monitor server ...\n")
     asyncio.run(Tortoise.init(TORTOISE))  # connect to the sqlite database
     asyncio.run(Tortoise.generate_schemas())  # generate schemas if necessary

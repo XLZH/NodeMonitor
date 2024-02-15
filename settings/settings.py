@@ -9,12 +9,7 @@
 # *************************************************************************
 
 
-__all__ = [
-    'TORTOISE',
-    'SERVER_LISTEN',
-    'SERVER_ADDRESS',
-    'SERVER_PORT'
-]
+__all__ = ['TORTOISE']
 
 
 # config for Tortoise-orm
@@ -31,9 +26,4 @@ TORTOISE = {
     'use_tz': False,
     'timezone': 'Asia/Shanghai'
 }
-
-
-SERVER_LISTEN = '0.0.0.0'  # the address listened by monitor_server
-SERVER_ADDRESS = '127.0.0.1'  # the address used by monitor_client
-SERVER_PORT = 35601
 

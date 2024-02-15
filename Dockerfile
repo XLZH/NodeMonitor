@@ -14,8 +14,10 @@ RUN set -eux; \
     rm -rf main.zip; \
     apk del .build-deps
 
+ENV SERVER_IP="127.0.0.1"
+ENV SERVER_PORT=36501
 
 WORKDIR /app
 
-ENTRYPOINT sh entrance.sh $0
+ENTRYPOINT ["sh", "entrance.sh", "${0}", "${SERVER_IP}", "${SERVER_PORT}"]
 

@@ -24,7 +24,7 @@ TORTOISE = {
     },
     'apps': {
         'models': {
-            'models': ['models.model', 'aerich.models'],
+            'models': ['models.model'],
             'default_connection': 'default'
         }
     },

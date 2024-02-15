@@ -45,6 +45,7 @@ async def handle_connection(client_socket):
 
 def main():
     asyncio.run(Tortoise.init(TORTOISE))  # connect to the sqlite database
+    asyncio.run(Tortoise.generate_schemas())  # generate schemas if necessary
 
     while True:
         try:

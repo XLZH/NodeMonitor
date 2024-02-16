@@ -14,9 +14,11 @@ RUN set -eux; \
     rm -rf main.zip; \
     apk del .build-deps
 
-ENV SERVICE="dummy"
-ENV SERVER_IP="127.0.0.1"
-ENV SERVER_PORT=36501
+ENV TZ=Asia/Shanghai
+
+ENV SERVICE="server"
+ENV IP="0.0.0.0"
+ENV PORT=36501
 
 WORKDIR /app
 

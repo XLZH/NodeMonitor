@@ -23,7 +23,7 @@ TORTOISE = {
             'default_connection': 'default'
         }
     },
-    'use_tz': False,
+    'use_tz': True,
     'timezone': 'Asia/Shanghai'
 }
 

@@ -7,12 +7,12 @@
 
 if [ "$SERVICE" == "client" ]; then
     echo "[*] start the service of monitor client ..."
-    echo "[*] the server IP and PORT is set with $IP and $PORT ..."
+    echo "[*] the server to be connected is $IP:$PORT ..."
     python monitor_client.py $IP $PORT
 
 elif [ "$SERVICE" == "server" ]; then
     echo "[*] start the service of monitor server ..."
-    echo "[*] the listen IP and PORT is set with $IP and $PORT ..."
+    echo "[*] the $IP:$PORT is ready for connections from clients ..."
     python monitor_server.py $IP $PORT
 
 else

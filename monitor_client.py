@@ -13,7 +13,6 @@ import socket
 import time
 import json
 import psutil
-from datetime import datetime
 import subprocess
 from collections import deque
 
@@ -153,8 +152,7 @@ class Monitor(object):
             'net_rx_5': '%d' % net_rx_5,
             'net_tx_5': '%d' % net_tx_5,
             'net_rx_60': '%d' % net_rx_60,
-            'net_tx_60': '%d' % net_tx_60,
-            'update': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            'net_tx_60': '%d' % net_tx_60
         }
         return info_dict
 

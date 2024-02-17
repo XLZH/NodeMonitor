@@ -8,15 +8,13 @@
 #    > Created Time: 2024年02月15日 星期四 09时54分12秒
 # *************************************************************************
 
-import socket
 import json
 import sys
 import asyncio
+from datetime import datetime
 from tortoise import Tortoise, exceptions
 from settings import *
 from models.model import NodeModel
-
-MAX_CONNECT = 32  # maximum number of parallel connection
 
 
 async def handle_connection(socket_reader, socket_writer):
@@ -24,9 +22,9 @@ async def handle_connection(socket_reader, socket_writer):
     info_dict = json.loads(client_data.decode('utf-8'))
 
     try:
-        host_name = info_dict['host']
-        await NodeModel.get(host=host_name)
-        await NodeModel.filter(host=host_name).update(**info_dict)
+        info_dict['update'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        await NodeModel.get(host=info_dict['host'])
+        await NodeModel.filter(host=info_dict['host']).update(**info_dict)
 
     except exceptions.DoesNotExist:
         await NodeModel.create(**info_dict)

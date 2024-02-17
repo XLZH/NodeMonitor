@@ -22,7 +22,6 @@ MAX_CONNECT = 32  # maximum number of parallel connection
 async def handle_connection(socket_reader, socket_writer):
     client_data = await socket_reader.read(1024)
     info_dict = json.loads(client_data.decode('utf-8'))
-    print(info_dict)
 
     try:
         host_name = info_dict['host']

@@ -13,7 +13,8 @@ from tortoise.models import Model
 
 
 class NodeModel(Model):
-    host = fields.CharField(pk=True, max_length=31, description="the hostname of the node")
+    id = fields.IntField(pk=True, description="the id of the node host")
+    host = fields.CharField(max_length=31, description="the hostname of the node")
     cpu_5 = fields.CharField(max_length=15, description="average ratio of cpu in 5 seconds")
     cpu_60 = fields.CharField(max_length=15, description="average ratio of cpu in 60 seconds")
     mem_5 = fields.CharField(max_length=15, description="average ratio of memory in 5 seconds")
@@ -22,7 +23,7 @@ class NodeModel(Model):
     net_tx_5 = fields.CharField(max_length=31, description="average send bytes of network in 5 seconds")
     net_rx_60 = fields.CharField(max_length=31, description="average receive bytes of network in 60 seconds")
     net_tx_60 = fields.CharField(max_length=31, description="average send bytes of network in 60 seconds")
-    update = fields.DatetimeField(auto_now=True, description="time to update the node info")
+    update = fields.CharField(max_length=31, description="time to update the node info")
 
     class Meta:
         table = "node"

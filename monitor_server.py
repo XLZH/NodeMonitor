@@ -12,8 +12,6 @@ import socket
 import json
 import sys
 import asyncio
-import threading
-from datetime import datetime
 from tortoise import Tortoise, exceptions
 from settings import *
 from models.model import NodeModel
@@ -21,23 +19,23 @@ from models.model import NodeModel
 MAX_CONNECT = 32  # maximum number of parallel connection
 
 
-async def handle_connection(client_socket):
-    info_dict = json.loads(client_socket.recv(1024).decode('utf-8'))
-    host_name = info_dict.pop('host')
+async def handle_connection(socket_reader, socket_writer):
+    client_data = await socket_reader.read(1024)
+    info_dict = json.loads(client_data.decode('utf-8'))
+    print(info_dict)
 
     try:
-        info_dict['update'] = datetime.now()
+        host_name = info_dict['host']
         await NodeModel.get(host=host_name)
         await NodeModel.filter(host=host_name).update(**info_dict)
 
     except exceptions.DoesNotExist:
-        info_dict['host'] = host_name
         await NodeModel.create(**info_dict)
 
-    client_socket.close()
+    socket_writer.close()
 
 
-def main():
+async def main():
     args = sys.argv
     if len(args) != 3:
         sys.stderr.write("usage: python monitor_server.py <listen_ip> <listen_port>\n")
@@ -46,25 +44,14 @@ def main():
     listen_ip = args[1]  # the address listened by monitor_server
     listen_port = int(args[2])
 
-    # start the server socket and listen for connection
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.bind((listen_ip, listen_port))
-    server_socket.listen(MAX_CONNECT)
+    # connect to the sqlite database
+    await Tortoise.init(TORTOISE)  # connect to the sqlite database
+    await Tortoise.generate_schemas()  # generate schemas if necessary
+    server = await asyncio.start_server(handle_connection, listen_ip, listen_port)
 
-    asyncio.run(Tortoise.init(TORTOISE))  # connect to the sqlite database
-    asyncio.run(Tortoise.generate_schemas())  # generate schemas if necessary
-
-    while True:
-        try:
-            client_socket, client_address = server_socket.accept()
-            client_handle = threading.Thread(target=asyncio.run, args=(handle_connection(client_socket),))
-            client_handle.start()
-
-        except KeyboardInterrupt:
-            server_socket.close()
-            asyncio.run(Tortoise.close_connections())
-            raise
+    async with server:
+        await server.serve_forever()
 
 
 if __name__ == '__main__':
-    main()
+    asyncio.run(main())

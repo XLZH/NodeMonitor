@@ -19,7 +19,6 @@ from collections import deque
 
 MONITOR_INTERVAL = 60  # the interval point of monitor (default 1min)
 SOCKET_INTERVAL = 10  # the node failed to connect to the server
-SENT_INTERVAL = 1  # sent the node info to the server
 
 
 class Cpu(object):
@@ -65,9 +64,9 @@ class Memory(object):
 
 class Network(object):
     def __init__(self, queue_size):
-        self.size = queue_size + 1  # need one more item
-        self.rx = deque([0]*self.size, maxlen=self.size)
-        self.tx = deque([0]*self.size, maxlen=self.size)
+        self.size = queue_size
+        self.rx = deque([0.0]*self.size, maxlen=self.size)
+        self.tx = deque([0.0]*self.size, maxlen=self.size)
         self.valid_device = []
         self._net_object_init()
 
@@ -82,31 +81,40 @@ class Network(object):
 
             self.valid_device.append(dev_name)
 
-    def _update_traffic(self):
+    def _get_current_traffic(self):
         net_in, net_out = 0, 0
         net = psutil.net_io_counters(pernic=True)
 
+        # the net_in and net_out before monitoring
         for dev in self.valid_device:
             dev_info = net[dev]
             net_in += dev_info[1]  # bytes_recv
             net_out += dev_info[0]  # bytes_sent
 
-        self.rx.append(net_in)
-        self.tx.append(net_out)
+        return net_in, net_out
+
+    def _update_traffic(self, interval=1):
+        beg_in, beg_out = self._get_current_traffic()
+        time.sleep(interval)
+        end_in, end_out = self._get_current_traffic()
+
+        rate_in = (end_in - beg_in) / 1024.0 / 1024.0  # in MB
+        rate_out = (end_out - beg_out) / 1024.0 / 1024.0  # in MB
+
+        self.rx.append(rate_in)
+        self.tx.append(rate_out)
 
     def get_avg_net(self, n_point):
         self._update_traffic()
-        avg_rx, avg_tx = 0, 0
 
         if n_point > self.size:
             sys.stderr.write(f"[Error:get_avg_speed] the check point can not larger than {self.size}!")
             return [0, 0]
 
-        for idx in range(self.size-1, self.size-n_point-1, -1):
-            avg_rx += self.rx[idx] - self.rx[idx - 1]
-            avg_tx += self.tx[idx] - self.tx[idx - 1]
+        avg_rx = sum(list(self.rx)[::-1][:n_point]) / n_point
+        avg_tx = sum(list(self.tx)[::-1][:n_point]) / n_point
 
-        return [int(avg_rx/n_point), int(avg_tx/n_point)]
+        return [avg_rx, avg_tx]
 
 
 def get_hostname() -> str:
@@ -149,10 +157,10 @@ class Monitor(object):
             'cpu_60': '%.2f' % self.get_cpu_ratio(60),
             'mem_5': '%.2f' % self.get_mem_ratio(5),
             'mem_60': '%.2f' % self.get_mem_ratio(60),
-            'net_rx_5': '%d' % net_rx_5,
-            'net_tx_5': '%d' % net_tx_5,
-            'net_rx_60': '%d' % net_rx_60,
-            'net_tx_60': '%d' % net_tx_60
+            'net_rx_5': '%.2f' % net_rx_5,
+            'net_tx_5': '%.2f' % net_tx_5,
+            'net_rx_60': '%.2f' % net_rx_60,
+            'net_tx_60': '%.2f' % net_tx_60
         }
         return info_dict
 
@@ -180,5 +188,3 @@ if __name__ == '__main__':
         except socket.error:
             time.sleep(SOCKET_INTERVAL)
             continue
-
-        time.sleep(SENT_INTERVAL)

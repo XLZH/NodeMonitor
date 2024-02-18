@@ -98,8 +98,8 @@ class Network(object):
         time.sleep(interval)
         end_in, end_out = self._get_current_traffic()
 
-        rate_in = (end_in - beg_in) / 1024.0 / 1024.0  # in MB
-        rate_out = (end_out - beg_out) / 1024.0 / 1024.0  # in MB
+        rate_in = (end_in - beg_in) / 1024.0 / 1024.0 / interval  # in MB
+        rate_out = (end_out - beg_out) / 1024.0 / 1024.0 / interval  # in MB
 
         self.rx.append(rate_in)
         self.tx.append(rate_out)

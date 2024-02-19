@@ -144,19 +144,10 @@ class Monitor(object):
         self.mem_obj = Memory(interval_size)
         self.net_obj = Network(interval_size)
 
-    def get_cpu_ratio(self, point_list):
-        return self.cpu_obj.get_avg_cpu(point_list)
-
-    def get_mem_ratio(self, point_list):
-        return self.mem_obj.get_avg_mem(point_list)
-
-    def get_net_speed(self, point_list):
-        return self.net_obj.get_avg_net(point_list)
-
-    def get_node_info(self):
-        cpu_list = self.get_cpu_ratio([5, 60])
-        mem_list = self.get_mem_ratio([5, 60])
-        net_list = self.get_net_speed([5, 60])
+    def get_node_info(self, point_list):
+        cpu_list = self.cpu_obj.get_avg_cpu(point_list)
+        mem_list = self.mem_obj.get_avg_mem(point_list)
+        net_list = self.net_obj.get_avg_net(point_list)
 
         info_dict = {
             'host': get_hostname(),
@@ -186,8 +177,7 @@ if __name__ == '__main__':
 
     while True:
         # update the node status info in every loop
-        node_info = monitor_obj.get_node_info()
-        print(node_info)
+        node_info = monitor_obj.get_node_info([5, 60])
 
         try:
             s = socket.create_connection((server_ip, server_port))

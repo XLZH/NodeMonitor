@@ -256,7 +256,7 @@ class Monitor(object):
 if __name__ == '__main__':
     args = sys.argv
     if len(args) != 4:
-        sys.stderr.write("usage: python monitor_client.py <server_ip> <server_port> <disk_list>\n")
+        sys.stderr.write("usage: python monitor_client.py <server_ip> <socket_port> <disk_list>\n")
         sys.exit(-1)
 
     server_ip = args[1]

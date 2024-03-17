@@ -1,0 +1,4 @@
+# Debug files
+*.idea/
+*.pyc
+venv/

@@ -123,6 +123,92 @@ class Network(object):
         return net_list
 
 
+class Disk(object):
+    """
+    get the disk partition status
+
+    partition_dict = {'/hracond2': ['4.5P', '3.9P', '605T', '87%'], ...}
+    """
+    def __init__(self, check_interval, disk_set):
+        self.partition_dict = {disk: [] for disk in disk_set}
+        self.failed_disks = 'None'
+        self.disk_status = 0
+        self.disk_set = disk_set
+        self.check_interval = check_interval
+        self.prev_time = time.time()
+        self.__update_disk_info()
+
+    def __update_disk_info(self) -> int:
+        """
+        update the disk information by 'df -h'
+        """
+        self.prev_time = time.time()
+        cmd_list = ['df', '-h']
+
+        try:
+            ret = subprocess.run(cmd_list, capture_output=True, text=True, timeout=5)
+
+        except subprocess.TimeoutExpired:
+            self.disk_status, self.failed_disks = -1, 'Unknown'
+            return self.disk_status
+
+        # format: ['Filesystem', 'Size', 'Used', 'Avail', 'Use%', 'Mounted on']
+        part_list = ret.stdout.splitlines()
+        cur_avail_disk = set()
+
+        for part in part_list:
+            d_list = part.split()
+            if d_list[-1] not in self.disk_set:  # the disk is not shared storage
+                continue
+
+            cur_avail_disk.add(d_list[-1])
+            self.partition_dict[d_list[-1]] = d_list[1:]
+
+        # some of the disks is not mounted for the node
+        failed = list(self.disk_set - cur_avail_disk)
+        if len(failed) > 0:
+            self.failed_disks = ':'.join(failed)
+            self.disk_status = len(failed)
+            return self.disk_status
+
+        # everything is ok for the disk
+        self.disk_status, self.failed_disks = 0, 'None'
+        return self.disk_status
+
+    def get_disk_status(self) -> list:
+        """
+        get the disk status by time interval
+
+        :return:
+            [-1, 'Unknown']  -> failed to connect disks for the node
+            [0, 'None']  -> all disks is alive
+            [>0, '/upload:/p300'] -> e.g. two disk are unmounted
+        """
+        cur_time = time.time()
+
+        if cur_time - self.prev_time <= self.check_interval:
+            return [self.disk_status, self.failed_disks]
+
+        # update the disk information by 'df -h'
+        self.__update_disk_info()
+        return [self.disk_status, self.failed_disks]
+
+    def get_disk_info(self) -> list:
+        """
+        get the disk information by time interval
+        :return:
+            [disk_status, partition_dict]
+        """
+        cur_time = time.time()
+
+        if cur_time - self.prev_time <= self.check_interval:
+            return [self.disk_status, self.partition_dict]
+
+        # update the disk information by 'df -h'
+        self.__update_disk_info()
+        return [self.disk_status, self.partition_dict]
+
+
 def get_hostname() -> str:
     """
     get the hostname of the node
@@ -139,15 +225,17 @@ def get_hostname() -> str:
 
 
 class Monitor(object):
-    def __init__(self, interval_size):
+    def __init__(self, interval_size, disk_set):
         self.cpu_obj = Cpu(interval_size)
         self.mem_obj = Memory(interval_size)
         self.net_obj = Network(interval_size)
+        self.disk_obj = Disk(interval_size, disk_set)
 
     def get_node_info(self, point_list):
         cpu_list = self.cpu_obj.get_avg_cpu(point_list)
         mem_list = self.mem_obj.get_avg_mem(point_list)
         net_list = self.net_obj.get_avg_net(point_list)
+        disk_status = self.disk_obj.get_disk_status()
 
         info_dict = {
             'host': get_hostname(),
@@ -158,22 +246,25 @@ class Monitor(object):
             'net_rx_5': '%.2f' % net_list[0][0],
             'net_tx_5': '%.2f' % net_list[0][1],
             'net_rx_60': '%.2f' % net_list[1][0],
-            'net_tx_60': '%.2f' % net_list[1][1]
+            'net_tx_60': '%.2f' % net_list[1][1],
+            'disk_status': '%d' % disk_status[0],
+            'disk_failed': '%s' % disk_status[1]
         }
         return info_dict
 
 
 if __name__ == '__main__':
     args = sys.argv
-    if len(args) != 3:
-        sys.stderr.write("usage: python monitor_client.py <server_ip> <server_port>\n")
+    if len(args) != 4:
+        sys.stderr.write("usage: python monitor_client.py <server_ip> <server_port> <disk_list>\n")
         sys.exit(-1)
 
     server_ip = args[1]
     server_port = int(args[2])
+    input_disks = set(args[3].split(':'))  # e.g. '/p300:/hracond2:/upload'
 
     socket.setdefaulttimeout(10)
-    monitor_obj = Monitor(MONITOR_INTERVAL)
+    monitor_obj = Monitor(MONITOR_INTERVAL, input_disks)
 
     while True:
         # update the node status info in every loop

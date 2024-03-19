@@ -162,7 +162,7 @@ class Disk(object):
                 continue
 
             cur_avail_disk.add(d_list[-1])
-            self.partition_dict[d_list[-1]] = d_list[1:]
+            self.partition_dict[d_list[-1]] = d_list
 
         # some of the disks is not mounted for the node
         failed = list(self.disk_set - cur_avail_disk)

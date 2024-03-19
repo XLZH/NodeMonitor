@@ -1,0 +1,24 @@
+services:
+  monitor_server:
+    restart: always
+    image: monitor-1.2.0
+    container_name: monitor_server
+    environment:
+      - SERVICE=server
+      - IP=0.0.0.0
+      - SOCKET_PORT=12306
+    volumes:
+      - /path/to/monitorDB:/app/db
+    network_mode: host
+
+  monitor_api:
+    restart: always
+    image: monitor-1.2.0
+    container_name: monitor_api
+    environment:
+      - SERVICE=api
+      - IP=0.0.0.0
+      - API_PORT=12307
+    volumes:
+      - /path/to/monitorDB:/app/db
+    network_mode: host

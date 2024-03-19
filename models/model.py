@@ -23,7 +23,7 @@ class NodeModel(Model):
     net_tx_5 = fields.CharField(max_length=31, description="average send bytes of network in 5 seconds")
     net_rx_60 = fields.CharField(max_length=31, description="average receive bytes of network in 60 seconds")
     net_tx_60 = fields.CharField(max_length=31, description="average send bytes of network in 60 seconds")
-    disk_status = fields.IntField(description="the current status of the disk")
+    disk_status = fields.CharField(max_length=15, description="the current status of the disk")
     disk_failed = fields.CharField(max_length=255, description="disks that failed to mount")
     update = fields.CharField(max_length=31, description="time to update the node info")
 

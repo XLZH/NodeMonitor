@@ -19,82 +19,52 @@ __all__ = ['monitor']
 monitor = APIRouter()
 
 
-@monitor.get("/nodes/info60",
-             summary="get the server information within 60 seconds for all nodes")
-async def get_nodes_all60():
-    """
-    get the server information (cpu, mem, disk, et.) for all the nodes
-    """
-    info_list = await NodeModel.all().values(
-        'host', 'cpu_60', 'mem_60', 'net_rx_60', 'net_tx_60'
-    )
-
-    return {'count': len(info_list), 'info_list': info_list}
-
-
-@monitor.get("/node/info5",
-             summary="get the server information within 5 seconds for given node")
+@monitor.get("/info5", summary="get the server information within 5 seconds")
 async def get_node_info5(host: str):
     """
-    get the server information within 5 seconds for given hostname
+    get the server information (cpu, mem, disk, et.) within 5 seconds
     """
-    node_info = await NodeModel.filter(host=host).values(
-        'host', 'cpu_5', 'mem_5', 'net_rx_5', 'net_tx_5'
-    )
+    if host == 'all':
+        info_list = await NodeModel.all().values('host', 'cpu_5', 'mem_5', 'net_rx_5', 'net_tx_5')
+        return {'count': len(info_list), 'info_list': info_list}
 
+    # get the info5 for given node by hostname
+    node_info = await NodeModel.filter(host=host).values('host', 'cpu_5', 'mem_5', 'net_rx_5', 'net_tx_5')
     if len(node_info) == 0:
-        raise HTTPException(
-            status_code=410,
-            detail=f"unknown hostname ({host}) is detected!"
-        )
+        raise HTTPException(status_code=410, detail=f"unknown hostname ({host}) is detected!")
 
-    return {'count': 1, 'info5': node_info}
+    return {'count': 1, 'info_list': node_info}
 
 
-@monitor.get("/node/info60",
-             summary="get the server information within 60 seconds for given node")
+@monitor.get("/info60", summary="get the server information within 60 seconds")
 async def get_node_info60(host: str):
     """
-    get the server information within 60 seconds for given hostname
+    get the server information (cpu, mem, disk, et.)
     """
-    node_info = await NodeModel.filter(host=host).values(
-        'host', 'cpu_60', 'mem_60', 'net_rx_60', 'net_tx_60'
-    )
+    if host == 'all':
+        info_list = await NodeModel.all().values('host', 'cpu_60', 'mem_60', 'net_rx_60', 'net_tx_60')
+        return {'count': len(info_list), 'info_list': info_list}
 
+    # get the info60 for given node by hostname
+    node_info = await NodeModel.filter(host=host).values('host', 'cpu_60', 'mem_60', 'net_rx_60', 'net_tx_60')
     if len(node_info) == 0:
-        raise HTTPException(
-            status_code=410,
-            detail=f"unknown hostname ({host}) is detected!"
-        )
+        raise HTTPException(status_code=410, detail=f"unknown hostname ({host}) is detected!")
 
-    return {'count': 1, 'info60': node_info}
+    return {'count': 1, 'info_list': node_info}
 
 
-@monitor.get("/nodes/disk", summary="get the disk status for all nodes")
-async def get_nodes_disk():
-    """
-    get the disk status for all nodes
-    """
-    disk_list = await NodeModel.all().values(
-        'host', 'disk_status', 'disk_failed'
-    )
-
-    return {'count': len(disk_list), 'node_disk_list': disk_list}
-
-
-@monitor.get("/node/disk", summary="get the disk status for given node")
+@monitor.get("/disk", summary="get the disk status")
 async def get_node_disk(host: str):
     """
-    get the disk status for given hostname
+    get the disk status for 'all' nodes or given host
     """
-    disk_info = await NodeModel.filter(host=host).values(
-        'host', 'disk_status', 'disk_failed'
-    )
+    if host == 'all':
+        disk_list = await NodeModel.all().values('host', 'disk_status', 'disk_failed')
+        return {'count': len(disk_list), 'disk_list': disk_list}
 
+    # get the disk status for given node by hostname
+    disk_info = await NodeModel.filter(host=host).values('host', 'disk_status', 'disk_failed')
     if len(disk_info) == 0:
-        raise HTTPException(
-            status_code=410,
-            detail=f"unknown hostname ({host}) is detected!"
-        )
+        raise HTTPException(status_code=410, detail=f"unknown hostname ({host}) is detected!")
 
-    return {'count': 1, 'disk': disk_info}
+    return {'count': 1, 'disk_list': disk_info}

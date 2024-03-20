@@ -127,10 +127,10 @@ class Disk(object):
     """
     get the disk partition status
 
-    partition_dict = {'/hracond2': ['4.5P', '3.9P', '605T', '87%'], ...}
+    partition_list = [{disk_name: '/hracond2', 'disk_size': '4.5P', ... }, ...]
     """
     def __init__(self, check_interval, disk_set):
-        self.partition_dict = {disk: [] for disk in disk_set}
+        self.partition_list = []
         self.failed_disks = 'None'
         self.disk_status = 0
         self.disk_set = disk_set
@@ -162,10 +162,23 @@ class Disk(object):
                 continue
 
             cur_avail_disk.add(d_list[-1])
-            self.partition_dict[d_list[-1]] = d_list
+            avail_disk_dict = {
+                'disk_name': d_list[-1], 'disk_size': d_list[-5],
+                'disk_used': d_list[-4], 'disk_avail': d_list[-3],
+                'used_ratio': d_list[-2], 'disk_state': 'Alive'
+            }
+            self.partition_list.append(avail_disk_dict)
 
         # some of the disks is not mounted for the node
         failed = list(self.disk_set - cur_avail_disk)
+        for disk in failed:  # store the failed disk information
+            failed_disk_dict = {
+                'disk_name': disk, 'disk_size': '-1',
+                'disk_used': '-1', 'disk_avail': '-1',
+                'used_ratio': '0%', 'disk_state': 'Down'
+            }
+            self.partition_list.append(failed_disk_dict)
+
         if len(failed) > 0:
             self.failed_disks = ':'.join(failed)
             self.disk_status = len(failed)
@@ -202,11 +215,11 @@ class Disk(object):
         cur_time = time.time()
 
         if cur_time - self.prev_time <= self.check_interval:
-            return [self.disk_status, self.partition_dict]
+            return self.partition_list
 
         # update the disk information by 'df -h'
         self.__update_disk_info()
-        return [self.disk_status, self.partition_dict]
+        return self.partition_list
 
 
 def get_hostname() -> str:

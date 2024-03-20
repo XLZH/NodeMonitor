@@ -31,3 +31,18 @@ class NodeModel(Model):
         table = "node"
         table_description = "node status (memory, cpu and network)"
 
+
+class UsageModel(Model):
+    id = fields.IntField(pk=True, description="the id of the node host")
+    disk_name = fields.CharField(max_length=63, description="the name of the disk")
+    disk_size = fields.CharField(max_length=15, description="the disk size")
+    disk_used = fields.CharField(max_length=15, description="the used space of the disk")
+    disk_avail = fields.CharField(max_length=15, description="the available space of the disk")
+    used_ratio = fields.CharField(max_length=15, description="the ratio of the used space")
+    disk_state = fields.CharField(max_length=15, description="could be Alive or Down")
+    update = fields.CharField(max_length=31, description="time to update the node info")
+
+    class Meta:
+        table = "usage"
+        table_description = "the usage information of the mounted disks"
+

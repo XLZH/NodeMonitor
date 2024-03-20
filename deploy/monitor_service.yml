@@ -1,31 +1,33 @@
+version: '3.1'
+
 services:
   monitor_api:
     restart: always
-    image: monitor-1.2.0
+    image: 11.11.10.33:5000/monitor:1.2.1
     container_name: monitor_api
     environment:
       - SERVICE=api
       - IP=0.0.0.0
       - API_PORT=12307
     volumes:
-      - /path/to/monitorDB:/app/db
+      - /p300/xiaolong/SmartSystem/NodeMonitor/monitorDB:/app/db
     network_mode: host
 
   monitor_server:
     restart: always
-    image: monitor-1.2.0
+    image: 11.11.10.33:5000/monitor:1.2.1
     container_name: monitor_server
     environment:
       - SERVICE=server
       - IP=0.0.0.0
       - SOCKET_PORT=12306
     volumes:
-      - /path/to/monitorDB:/app/db
+      - /p300/xiaolong/SmartSystem/NodeMonitor/monitorDB:/app/db
     network_mode: host
 
   monitor_usage:
     restart: always
-    image: monitor-1.2.0
+    image: 11.11.10.33:5000/monitor:1.2.1
     container_name: monitor_usage
     environment:
       - SERVICE=usage

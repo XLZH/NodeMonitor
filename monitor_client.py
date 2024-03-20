@@ -143,6 +143,7 @@ class Disk(object):
         update the disk information by 'df -h'
         """
         self.prev_time = time.time()
+        self.partition_list.clear()  # remove all the items
         cmd_list = ['df', '-h']
 
         try:
@@ -150,6 +151,13 @@ class Disk(object):
 
         except subprocess.TimeoutExpired:
             self.disk_status, self.failed_disks = -1, 'Unknown'
+            for disk in self.disk_set:  # set all disk as down
+                failed_disk_dict = {
+                    'disk_name': disk, 'disk_size': '-1',
+                    'disk_used': '-1', 'disk_avail': '-1',
+                    'used_ratio': '0%', 'disk_state': 'Down'
+                }
+                self.partition_list.append(failed_disk_dict)
             return self.disk_status
 
         # format: ['Filesystem', 'Size', 'Used', 'Avail', 'Use%', 'Mounted on']

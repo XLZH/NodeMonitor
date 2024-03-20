@@ -10,7 +10,7 @@
 
 
 from fastapi import APIRouter, HTTPException
-from models.model import NodeModel
+from models.model import NodeModel, UsageModel
 
 
 __all__ = ['monitor']
@@ -68,3 +68,16 @@ async def get_node_disk(host: str):
         raise HTTPException(status_code=410, detail=f"unknown hostname ({host}) is detected!")
 
     return {'count': 1, 'disk_list': disk_info}
+
+
+@monitor.get("/usage", summary="get the disk usage")
+async def get_disk_usage():
+    """
+    get the disk usage for all mounted disks
+    """
+    disk_list = await UsageModel.all()
+
+    if len(disk_list) == 0:
+        raise HTTPException(status_code=411, detail="may be there are no disks provided")
+
+    return {'count': len(disk_list), 'disk_list': disk_list}

@@ -6,7 +6,7 @@ services:
     environment:
       - SERVICE=client
       - IP=11.11.1.23
-      - SOCKET_PORT=12306
+      - SOCKET_PORT=12307
       - DISKS=/hracond2:/hracond2:/hracond3:/gsainsdc2:/p300:/gsapub:/hracond:/upload:/gsapub3:/gsainsdc3:/hracond4:/hraupload
     volumes:
       - /proc:/host_proc:ro

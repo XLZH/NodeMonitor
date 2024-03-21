@@ -8,7 +8,7 @@ services:
     environment:
       - SERVICE=api
       - IP=0.0.0.0
-      - API_PORT=12307
+      - API_PORT=12306
     volumes:
       - /p300/xiaolong/SmartSystem/NodeMonitor/monitorDB:/app/db
     network_mode: host
@@ -20,7 +20,7 @@ services:
     environment:
       - SERVICE=server
       - IP=0.0.0.0
-      - SOCKET_PORT=12306
+      - SOCKET_PORT=12307
     volumes:
       - /p300/xiaolong/SmartSystem/NodeMonitor/monitorDB:/app/db
     network_mode: host

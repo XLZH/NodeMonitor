@@ -19,7 +19,13 @@ from models.model import NodeModel
 
 async def receive_client_data(socket_reader, socket_writer):
     client_data = await socket_reader.read(1024)
-    info_dict = json.loads(client_data.decode('utf-8'))
+
+    try:
+        # data that not really come from client
+        info_dict = json.loads(client_data.decode('utf-8'))
+    except json.JSONDecodeError:
+        socket_writer.close()
+        return
 
     try:
         info_dict['update'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -30,6 +36,7 @@ async def receive_client_data(socket_reader, socket_writer):
         await NodeModel.create(**info_dict)
 
     socket_writer.close()
+    return
 
 
 async def main():

@@ -28,7 +28,6 @@ async def get_disk_usage(disk_obj: Disk):
     get the disk state and usage and write to the sqlite database
     """
     disks_list = disk_obj.get_disk_info()
-    print(disks_list)
     for disk_info in disks_list:
         try:
             disk_info['update'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
